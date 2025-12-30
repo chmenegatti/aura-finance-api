@@ -7,6 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { authService } from "@/services/auth.service";
+import { setAuthToken, setStoredUser } from "@/services/auth.storage";
+import type { ApiError } from "@/types/api";
 
 type AuthMode = "login" | "register";
 
@@ -59,7 +62,7 @@ const Auth = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
@@ -95,24 +98,52 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setIsLoading(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      if (mode === "login") {
+        const authData = await authService.login({
+          email: formData.email,
+          password: formData.password,
+        });
 
-    setIsLoading(false);
+        setAuthToken(authData.token);
+        setStoredUser(authData.user);
 
-    toast({
-      title: mode === "login" ? "Login realizado!" : "Conta criada!",
-      description: mode === "login" 
-        ? "Bem-vindo de volta!" 
-        : "Sua conta foi criada com sucesso.",
-    });
+        toast({
+          title: "Login realizado!",
+          description: "Bem-vindo de volta!",
+        });
+      } else {
+        const authData = await authService.register({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        });
 
-    navigate("/dashboard");
+        setAuthToken(authData.token);
+        setStoredUser(authData.user);
+
+        toast({
+          title: "Conta criada!",
+          description: "Sua conta foi criada com sucesso.",
+        });
+      }
+
+      navigate("/dashboard");
+    } catch (error) {
+      const apiError = error as ApiError;
+      toast({
+        title: "Erro",
+        description: apiError.message || "Ocorreu um erro. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const switchMode = (newMode: AuthMode) => {
@@ -131,7 +162,7 @@ const Auth = () => {
       {/* Left Side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-primary/90 to-accent relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-30" />
-        
+
         <div className="relative z-10 flex flex-col justify-center px-12 xl:px-20">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -146,11 +177,11 @@ const Auth = () => {
             </Link>
 
             <h1 className="text-4xl xl:text-5xl font-bold text-white mb-6 leading-tight">
-              {mode === "login" 
-                ? "Acesse sua vida financeira em segundos" 
+              {mode === "login"
+                ? "Acesse sua vida financeira em segundos"
                 : "Crie sua conta e tenha controle total"}
             </h1>
-            
+
             <p className="text-white/80 text-lg mb-8 max-w-md">
               {mode === "login"
                 ? "Entre na sua conta e continue acompanhando suas finanças de forma simples e organizada."
@@ -186,21 +217,19 @@ const Auth = () => {
           <div className="flex bg-muted rounded-xl p-1 mb-8">
             <button
               onClick={() => switchMode("login")}
-              className={`flex-1 py-3 px-4 rounded-lg text-sm font-medium transition-all duration-300 ${
-                mode === "login"
+              className={`flex-1 py-3 px-4 rounded-lg text-sm font-medium transition-all duration-300 ${mode === "login"
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               Entrar
             </button>
             <button
               onClick={() => switchMode("register")}
-              className={`flex-1 py-3 px-4 rounded-lg text-sm font-medium transition-all duration-300 ${
-                mode === "register"
+              className={`flex-1 py-3 px-4 rounded-lg text-sm font-medium transition-all duration-300 ${mode === "register"
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               Criar conta
             </button>
@@ -320,11 +349,10 @@ const Auth = () => {
                               transition={{ duration: 0.3 }}
                             />
                           </div>
-                          <span className={`text-xs font-medium ${
-                            passwordStrength.score <= 1 ? "text-destructive" :
-                            passwordStrength.score === 2 ? "text-warning" :
-                            passwordStrength.score === 3 ? "text-accent" : "text-income"
-                          }`}>
+                          <span className={`text-xs font-medium ${passwordStrength.score <= 1 ? "text-destructive" :
+                              passwordStrength.score === 2 ? "text-warning" :
+                                passwordStrength.score === 3 ? "text-accent" : "text-income"
+                            }`}>
                             {passwordStrength.label}
                           </span>
                         </div>

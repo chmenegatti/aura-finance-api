@@ -10,10 +10,13 @@ import { formatCurrency, formatFullDate } from "@/lib/finance";
 import { Transaction } from "@/types/finance";
 import { transactionService } from "@/services";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TransactionForm } from "@/components/transactions/TransactionForm";
+import { CategoryIcon } from "@/components/ui/CategoryIcon";
 
 const Transactions = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "income" | "expense">("all");
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   const apiType =
     filterType === "income" ? "INCOME" : filterType === "expense" ? "EXPENSE" : undefined;
@@ -42,7 +45,11 @@ const Transactions = () => {
 
   return (
     <MainLayout>
-      <TransactionForm open={isFormOpen} onOpenChange={setIsFormOpen} />
+      <TransactionForm
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        onSuccess={() => transactionsQuery.refetch()}
+      />
 
       {/* Header */}
       <motion.div
@@ -175,10 +182,10 @@ const Transactions = () => {
                   >
                     <div className="flex items-center gap-4">
                       <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center text-xl transition-transform group-hover:scale-110"
+                        className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
                         style={{ backgroundColor: `${transaction.category.color}20` }}
                       >
-                        {transaction.category.icon}
+                        <CategoryIcon iconName={transaction.category.icon} className="w-6 h-6" />
                       </div>
                       <div>
                         <div className="font-semibold text-foreground">

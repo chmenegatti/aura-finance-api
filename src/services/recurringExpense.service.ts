@@ -54,4 +54,17 @@ export const recurringExpenseService = {
   async remove(id: string): Promise<void> {
     await api.delete(`/recurring-expenses/${id}`);
   },
+
+  async generate(payload: {
+    startDate: string;
+    endDate: string;
+    defaultCategoryId: string;
+    paymentMethod: string;
+  }): Promise<{ count: number }> {
+    const { data } = await api.post<ApiResponseSuccess<{ count: number }>>(
+      "/recurring-expenses/generate",
+      payload
+    );
+    return data.data;
+  },
 };

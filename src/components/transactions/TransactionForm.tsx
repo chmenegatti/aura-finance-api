@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -36,13 +36,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { categories } from "@/data/mockData";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { categoryService } from "@/services/category.service";
+import { CategoryIcon } from "@/components/ui/CategoryIcon";
+import { transactionService } from "@/services/transaction.service";
+import { receiptService } from "@/services/receipt.service";
+import type { Category } from "@/types/category";
+import type { TransactionApiType } from "@/types/transaction";
+import type { ApiError } from "@/types/api";
 
 interface TransactionFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
 const paymentMethods = [
@@ -54,9 +61,10 @@ const paymentMethods = [
   "Boleto",
 ];
 
-export const TransactionForm = ({ open, onOpenChange }: TransactionFormProps) => {
+export const TransactionForm = ({ open, onOpenChange, onSuccess }: TransactionFormProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [type, setType] = useState<"income" | "expense">("expense");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
@@ -65,6 +73,26 @@ export const TransactionForm = ({ open, onOpenChange }: TransactionFormProps) =>
   const [paymentMethod, setPaymentMethod] = useState("");
   const [notes, setNotes] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
+
+  useEffect(() => {
+    if (open) {
+      loadCategories();
+    }
+  }, [open]);
+
+  const loadCategories = async () => {
+    try {
+      const data = await categoryService.list();
+      setCategories(data);
+    } catch (error) {
+      const apiError = error as ApiError;
+      toast({
+        title: "Erro ao carregar categorias",
+        description: apiError.message,
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -102,25 +130,54 @@ export const TransactionForm = ({ open, onOpenChange }: TransactionFormProps) =>
 
     setIsLoading(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      // Convert type to API format
+      const apiType: TransactionApiType = type === "income" ? "INCOME" : "EXPENSE";
 
-    toast({
-      title: "Transação registrada!",
-      description: `${type === "income" ? "Entrada" : "Saída"} de R$ ${amount} adicionada com sucesso.`,
-    });
+      // Create transaction
+      const transaction = await transactionService.create({
+        description,
+        amount: parseFloat(amount),
+        type: apiType,
+        categoryId,
+        date: date.toISOString(),
+        paymentMethod,
+        isRecurring: false,
+      });
 
-    setIsLoading(false);
-    resetForm();
-    onOpenChange(false);
+      // Upload attachments if any
+      for (const file of attachments) {
+        try {
+          await receiptService.upload({
+            transactionId: transaction.id,
+            file,
+          });
+        } catch (error) {
+          console.error("Failed to upload attachment:", error);
+        }
+      }
+
+      toast({
+        title: "Transação registrada!",
+        description: `${type === "income" ? "Entrada" : "Saída"} de R$ ${amount} adicionada com sucesso.`,
+      });
+
+      resetForm();
+      onOpenChange(false);
+      onSuccess?.();
+    } catch (error) {
+      const apiError = error as ApiError;
+      toast({
+        title: "Erro ao criar transação",
+        description: apiError.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const filteredCategories = categories.filter((cat) => {
-    if (type === "income") {
-      return ["Salário", "Investimentos", "Outros"].includes(cat.name);
-    }
-    return !["Salário"].includes(cat.name);
-  });
+  const filteredCategories = categories;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

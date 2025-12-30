@@ -3,6 +3,7 @@ import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Transaction } from "@/types/finance";
 import { formatCurrency, formatDate } from "@/lib/finance";
+import { CategoryIcon } from "@/components/ui/CategoryIcon";
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -10,8 +11,8 @@ interface TransactionListProps {
 }
 
 export function TransactionList({ transactions, limit }: TransactionListProps) {
-  const displayTransactions = limit 
-    ? transactions.slice(0, limit) 
+  const displayTransactions = limit
+    ? transactions.slice(0, limit)
     : transactions;
 
   return (
@@ -41,10 +42,10 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-transform group-hover:scale-110"
+                    className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
                     style={{ backgroundColor: `${transaction.category.color}20` }}
                   >
-                    {transaction.category.icon}
+                    <CategoryIcon iconName={transaction.category.icon} className="w-5 h-5" />
                   </div>
                   <div>
                     <div className="font-medium text-foreground text-sm">
@@ -59,11 +60,10 @@ export function TransactionList({ transactions, limit }: TransactionListProps) {
                 </div>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`font-semibold ${
-                      transaction.type === "income"
+                    className={`font-semibold ${transaction.type === "income"
                         ? "text-income"
                         : "text-expense"
-                    }`}
+                      }`}
                   >
                     {transaction.type === "income" ? "+" : "-"}
                     {formatCurrency(transaction.amount)}

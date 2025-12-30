@@ -10,6 +10,8 @@ import { receiptService, transactionService } from "@/services";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import type { Transaction } from "@/types/finance";
+import { CategoryIcon } from "@/components/ui/CategoryIcon";
 
 const Receipts = () => {
   const { toast } = useToast();
@@ -264,7 +266,7 @@ const Receipts = () => {
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-foreground truncate">{title}</h3>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                          <span>{t.category.icon}</span>
+                          <CategoryIcon iconName={t.category.icon} className="w-4 h-4" />
                           <span>{t.category.name}</span>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">

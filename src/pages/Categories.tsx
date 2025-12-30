@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/finance";
 import { categoryService, transactionService } from "@/services";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CategoryIcon } from "@/components/ui/CategoryIcon";
 
 const Categories = () => {
   const categoriesQuery = useQuery({
@@ -91,10 +92,10 @@ const Categories = () => {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div
-                        className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl transition-transform group-hover:scale-110 shadow-soft-sm"
+                        className="w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 shadow-soft-sm"
                         style={{ backgroundColor: `${category.color}20` }}
                       >
-                        {category.icon}
+                        <CategoryIcon iconName={category.icon} className="w-7 h-7" />
                       </div>
                       <div>
                         <h3 className="font-semibold text-foreground text-lg">{category.name}</h3>

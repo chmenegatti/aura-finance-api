@@ -9,6 +9,7 @@ import { formatCurrency } from "@/lib/finance";
 import { recurringExpenseService } from "@/services";
 import type { RecurringExpense, RecurringExpenseDTO } from "@/types/recurringExpense";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CategoryIcon } from "@/components/ui/CategoryIcon";
 
 function mapRecurringToUi(dto: RecurringExpenseDTO): RecurringExpense {
   const startDate = new Date(dto.startDate);
@@ -148,10 +149,10 @@ const Recurring = () => {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center text-xl transition-transform group-hover:scale-110"
+                        className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
                         style={{ backgroundColor: `${expense.category.color}20` }}
                       >
-                        {expense.category.icon}
+                        <CategoryIcon iconName={expense.category.icon} className="w-6 h-6" />
                       </div>
                       <div>
                         <h3 className="font-semibold text-foreground">{expense.description}</h3>

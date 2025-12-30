@@ -35,7 +35,7 @@ export function RecurringExpensesCard({ expenses, limit }: RecurringExpensesCard
             {displayExpenses.map((expense, index) => {
               const today = new Date().getDate();
               const isNearDue = expense.dueDay - today <= 5 && expense.dueDay - today >= 0;
-              
+
               return (
                 <motion.div
                   key={expense.id}
@@ -46,10 +46,10 @@ export function RecurringExpensesCard({ expenses, limit }: RecurringExpensesCard
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-transform group-hover:scale-110"
+                      className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
                       style={{ backgroundColor: `${expense.category.color}20` }}
                     >
-                      {expense.category.icon}
+                      <CategoryIcon iconName={expense.category.icon} className="w-5 h-5" />
                     </div>
                     <div>
                       <div className="font-medium text-foreground text-sm flex items-center gap-2">
