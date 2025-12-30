@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, Filter, ArrowUpRight, ArrowDownRight, Calendar } from "lucide-react";
+import { Plus, Search, ArrowUpRight, ArrowDownRight, Calendar } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { transactions as mockTransactions } from "@/data/mockData";
 import { formatCurrency, formatFullDate } from "@/lib/finance";
-import { Transaction } from "@/types/finance";
+import { TransactionForm } from "@/components/transactions/TransactionForm";
 
 const Transactions = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "income" | "expense">("all");
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   const filteredTransactions = mockTransactions.filter((t) => {
     const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -30,6 +31,8 @@ const Transactions = () => {
 
   return (
     <MainLayout>
+      <TransactionForm open={isFormOpen} onOpenChange={setIsFormOpen} />
+      
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -45,7 +48,7 @@ const Transactions = () => {
             Gerencie suas entradas e saídas
           </p>
         </div>
-        <Button variant="income" size="lg" className="gap-2">
+        <Button variant="income" size="lg" className="gap-2" onClick={() => setIsFormOpen(true)}>
           <Plus className="w-5 h-5" />
           <span>Nova Transação</span>
         </Button>
