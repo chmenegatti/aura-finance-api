@@ -3,6 +3,7 @@ import { Calendar, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RecurringExpense } from "@/types/finance";
 import { formatCurrency } from "@/lib/finance";
+import { CategoryIcon } from "@/components/ui/CategoryIcon";
 
 interface RecurringExpensesCardProps {
   expenses: RecurringExpense[];

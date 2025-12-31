@@ -1,5 +1,5 @@
-const AUTH_TOKEN_KEY = "financeapp:token";
-const AUTH_USER_KEY = "financeapp:user";
+const AUTH_TOKEN_KEY = "myfinance:token";
+const AUTH_USER_KEY = "myfinance:user";
 
 export type StoredUser = unknown;
 

@@ -41,7 +41,7 @@ export const DifferentialsSection = () => {
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             Por que escolher o{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-primary">
-              FinanceApp?
+              MyFinance?
             </span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">

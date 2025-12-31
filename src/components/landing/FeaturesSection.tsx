@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
-import { 
-  LayoutDashboard, 
-  BarChart3, 
-  Tags, 
-  RefreshCw, 
+import {
+  LayoutDashboard,
+  BarChart3,
+  Tags,
+  RefreshCw,
   FolderOpen,
   Smartphone
 } from "lucide-react";
@@ -68,7 +68,7 @@ export const FeaturesSection = () => {
             </span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Conheça em detalhes tudo o que o FinanceApp pode fazer por você.
+            Conheça em detalhes tudo o que o MyFinance pode fazer por você.
           </p>
         </motion.div>
 
@@ -80,9 +80,8 @@ export const FeaturesSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className={`flex flex-col ${
-                feature.image === "right" ? "lg:flex-row" : "lg:flex-row-reverse"
-              } items-center gap-8 lg:gap-16`}
+              className={`flex flex-col ${feature.image === "right" ? "lg:flex-row" : "lg:flex-row-reverse"
+                } items-center gap-8 lg:gap-16`}
             >
               {/* Content */}
               <div className="flex-1 text-center lg:text-left">

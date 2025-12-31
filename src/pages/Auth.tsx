@@ -173,7 +173,7 @@ const Auth = () => {
               <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
                 <span className="text-white font-bold text-xl">₣</span>
               </div>
-              <span className="text-white font-bold text-2xl">FinanceApp</span>
+              <span className="text-white font-bold text-2xl">MyFinance</span>
             </Link>
 
             <h1 className="text-4xl xl:text-5xl font-bold text-white mb-6 leading-tight">
@@ -209,7 +209,7 @@ const Auth = () => {
               <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
                 <span className="text-primary-foreground font-bold text-xl">₣</span>
               </div>
-              <span className="text-foreground font-bold text-2xl">FinanceApp</span>
+              <span className="text-foreground font-bold text-2xl">MyFinance</span>
             </Link>
           </div>
 
@@ -218,8 +218,8 @@ const Auth = () => {
             <button
               onClick={() => switchMode("login")}
               className={`flex-1 py-3 px-4 rounded-lg text-sm font-medium transition-all duration-300 ${mode === "login"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
                 }`}
             >
               Entrar
@@ -227,8 +227,8 @@ const Auth = () => {
             <button
               onClick={() => switchMode("register")}
               className={`flex-1 py-3 px-4 rounded-lg text-sm font-medium transition-all duration-300 ${mode === "register"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
                 }`}
             >
               Criar conta
@@ -350,8 +350,8 @@ const Auth = () => {
                             />
                           </div>
                           <span className={`text-xs font-medium ${passwordStrength.score <= 1 ? "text-destructive" :
-                              passwordStrength.score === 2 ? "text-warning" :
-                                passwordStrength.score === 3 ? "text-accent" : "text-income"
+                            passwordStrength.score === 2 ? "text-warning" :
+                              passwordStrength.score === 3 ? "text-accent" : "text-income"
                             }`}>
                             {passwordStrength.label}
                           </span>

@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Plus, Calendar, AlertCircle, Pause, Play, MoreHorizontal } from "lucide-react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +11,7 @@ import { recurringExpenseService } from "@/services";
 import type { RecurringExpense, RecurringExpenseDTO } from "@/types/recurringExpense";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
+import { RecurringExpenseForm } from "@/components/recurring/RecurringExpenseForm";
 
 function mapRecurringToUi(dto: RecurringExpenseDTO): RecurringExpense {
   const startDate = new Date(dto.startDate);
@@ -46,6 +48,8 @@ function mapRecurringToUi(dto: RecurringExpenseDTO): RecurringExpense {
 }
 
 const Recurring = () => {
+  const [isFormOpen, setIsFormOpen] = useState(false);
+
   const recurringQuery = useQuery({
     queryKey: ["recurring-expenses", { page: 1, pageSize: 100 }],
     queryFn: () => recurringExpenseService.listPaginated({ page: 1, pageSize: 100 }),
@@ -61,6 +65,12 @@ const Recurring = () => {
 
   return (
     <MainLayout>
+      <RecurringExpenseForm
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        onSuccess={() => recurringQuery.refetch()}
+      />
+
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -76,7 +86,7 @@ const Recurring = () => {
             Gerencie suas despesas fixas e assinaturas
           </p>
         </div>
-        <Button variant="default" size="lg" className="gap-2">
+        <Button variant="default" size="lg" className="gap-2" onClick={() => setIsFormOpen(true)}>
           <Plus className="w-5 h-5" />
           <span>Novo Recorrente</span>
         </Button>
@@ -231,7 +241,7 @@ const Recurring = () => {
           );
         })}
       </div>
-    </MainLayout>
+    </MainLayout >
   );
 };
 

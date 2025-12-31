@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
@@ -11,9 +11,11 @@ import {
   X,
   ChevronLeft,
   Wallet,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { clearAuthStorage } from "@/services/auth.storage";
 
 const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -30,7 +32,13 @@ interface SidebarProps {
 
 export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  const handleLogout = () => {
+    clearAuthStorage();
+    navigate("/");
+  };
 
   const NavContent = () => (
     <div className="flex flex-col h-full">
@@ -47,7 +55,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
               exit={{ opacity: 0, width: 0 }}
               className="text-lg font-bold text-sidebar-foreground overflow-hidden whitespace-nowrap"
             >
-              FinanceApp
+              MyFinance
             </motion.span>
           )}
         </AnimatePresence>
@@ -91,6 +99,32 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           );
         })}
       </nav>
+
+      {/* Logout Button */}
+      <div className="px-3 py-2">
+        <Button
+          variant="ghost"
+          onClick={handleLogout}
+          className={cn(
+            "w-full justify-start gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group",
+            "text-sidebar-foreground hover:bg-red-500/10 hover:text-red-500"
+          )}
+        >
+          <LogOut className="w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110" />
+          <AnimatePresence>
+            {!isCollapsed && (
+              <motion.span
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: "auto" }}
+                exit={{ opacity: 0, width: 0 }}
+                className="font-medium overflow-hidden whitespace-nowrap"
+              >
+                Sair
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </Button>
+      </div>
 
       {/* Collapse Button (Desktop Only) */}
       <div className="hidden lg:block p-4 border-t border-sidebar-border">

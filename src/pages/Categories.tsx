@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Plus, Edit2, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,8 +9,11 @@ import { formatCurrency } from "@/lib/finance";
 import { categoryService, transactionService } from "@/services";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
+import { CategoryForm } from "@/components/categories/CategoryForm";
 
 const Categories = () => {
+  const [isFormOpen, setIsFormOpen] = useState(false);
+
   const categoriesQuery = useQuery({
     queryKey: ["categories"],
     queryFn: () => categoryService.list(),
@@ -45,6 +49,12 @@ const Categories = () => {
 
   return (
     <MainLayout>
+      <CategoryForm
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        onSuccess={() => categoriesQuery.refetch()}
+      />
+
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -60,7 +70,7 @@ const Categories = () => {
             Organize suas transações por categorias
           </p>
         </div>
-        <Button variant="default" size="lg" className="gap-2">
+        <Button variant="default" size="lg" className="gap-2" onClick={() => setIsFormOpen(true)}>
           <Plus className="w-5 h-5" />
           <span>Nova Categoria</span>
         </Button>
