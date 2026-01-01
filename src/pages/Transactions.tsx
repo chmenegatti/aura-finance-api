@@ -1,28 +1,33 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, Filter, ArrowUpRight, ArrowDownRight, Calendar } from "lucide-react";
+import { startOfMonth, endOfMonth } from "date-fns";
+import { Plus, Search, ArrowUpRight, ArrowDownRight, Calendar } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCurrency, formatFullDate } from "@/lib/finance";
-import { Transaction } from "@/types/finance";
 import { transactionService } from "@/services";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
+import { DateRangeFilter, DateRange } from "@/components/filters/DateRangeFilter";
 
 const Transactions = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "income" | "expense">("all");
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: startOfMonth(new Date()),
+    to: endOfMonth(new Date()),
+  });
 
   const apiType =
     filterType === "income" ? "INCOME" : filterType === "expense" ? "EXPENSE" : undefined;
 
   const transactionsQuery = useQuery({
-    queryKey: ["transactions", { page: 1, pageSize: 100, type: apiType }],
+    queryKey: ["transactions", { page: 1, pageSize: 100, type: apiType, startDate: dateRange.from.toISOString(), endDate: dateRange.to.toISOString() }],
     queryFn: () => transactionService.listPaginated({ page: 1, pageSize: 100, type: apiType }),
   });
 
@@ -32,7 +37,9 @@ const Transactions = () => {
     const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       t.category.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === "all" || t.type === filterType;
-    return matchesSearch && matchesType;
+    const transactionDate = t.date;
+    const matchesDate = transactionDate >= dateRange.from && transactionDate <= dateRange.to;
+    return matchesSearch && matchesType && matchesDate;
   });
 
   const totalIncome = filteredTransactions
@@ -66,10 +73,13 @@ const Transactions = () => {
             Gerencie suas entradas e saídas
           </p>
         </div>
-        <Button variant="income" size="lg" className="gap-2" onClick={() => setIsFormOpen(true)}>
-          <Plus className="w-5 h-5" />
-          <span>Nova Transação</span>
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <DateRangeFilter value={dateRange} onChange={setDateRange} />
+          <Button variant="income" size="lg" className="gap-2" onClick={() => setIsFormOpen(true)}>
+            <Plus className="w-5 h-5" />
+            <span>Nova Transação</span>
+          </Button>
+        </div>
       </motion.div>
 
       {/* Summary Cards */}
@@ -199,7 +209,9 @@ const Transactions = () => {
                             <Calendar className="w-3 h-3" />
                             {formatFullDate(transaction.date)}
                           </span>
-                          <span className="text-xs">{transaction.paymentMethod}</span>
+                          {transaction.paymentMethod && (
+                            <span className="text-xs">{transaction.paymentMethod}</span>
+                          )}
                         </div>
                       </div>
                     </div>

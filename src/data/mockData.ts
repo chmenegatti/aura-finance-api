@@ -113,6 +113,8 @@ export const recurringExpenses: RecurringExpense[] = [
     category: categories[1],
     frequency: "monthly",
     dueDay: 5,
+    totalInstallments: 0,
+    currentInstallment: 0,
     isActive: true,
   },
   {
@@ -133,6 +135,8 @@ export const recurringExpenses: RecurringExpense[] = [
     category: categories[3],
     frequency: "monthly",
     dueDay: 15,
+    totalInstallments: 0,
+    currentInstallment: 0,
     isActive: true,
   },
   {
@@ -142,6 +146,8 @@ export const recurringExpenses: RecurringExpense[] = [
     category: categories[3],
     frequency: "monthly",
     dueDay: 15,
+    totalInstallments: 0,
+    currentInstallment: 0,
     isActive: true,
   },
   {
@@ -151,6 +157,8 @@ export const recurringExpenses: RecurringExpense[] = [
     category: categories[4],
     frequency: "monthly",
     dueDay: 1,
+    totalInstallments: 0,
+    currentInstallment: 0,
     isActive: true,
   },
   {
@@ -160,6 +168,8 @@ export const recurringExpenses: RecurringExpense[] = [
     category: categories[4],
     frequency: "monthly",
     dueDay: 20,
+    totalInstallments: 0,
+    currentInstallment: 0,
     isActive: true,
   },
 ];

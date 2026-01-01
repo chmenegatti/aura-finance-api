@@ -12,7 +12,7 @@ export const Footer = () => {
               <Wallet className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <span className="text-lg font-bold text-foreground">MyFinance</span>
+              <span className="text-lg font-bold text-foreground">Aura Finance</span>
               <p className="text-sm text-muted-foreground">
                 Organize suas finanças de forma simples
               </p>
@@ -44,7 +44,7 @@ export const Footer = () => {
 
         <div className="mt-8 pt-8 border-t border-border/30 text-center">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} MyFinance. Todos os direitos reservados.
+            © {new Date().getFullYear()} Aura Finance. Todos os direitos reservados.
           </p>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Plus, Bell } from "lucide-react";
 import { useState } from "react";
+import { startOfMonth, endOfMonth } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { SummaryCards } from "@/components/dashboard/SummaryCards";
@@ -10,6 +11,7 @@ import { BalanceChart } from "@/components/dashboard/BalanceChart";
 import { TransactionList } from "@/components/dashboard/TransactionList";
 import { RecurringExpensesCard } from "@/components/dashboard/RecurringExpensesCard";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
+import { DateRangeFilter, DateRange } from "@/components/filters/DateRangeFilter";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { categoryService, dashboardService, recurringExpenseService, transactionService } from "@/services";
@@ -76,14 +78,18 @@ function mapRecurringToUi(dto: RecurringExpenseDTO): RecurringExpense {
 
 const Dashboard = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: startOfMonth(new Date()),
+    to: endOfMonth(new Date()),
+  });
 
   const summaryQuery = useQuery({
-    queryKey: ["dashboard", "summary"],
+    queryKey: ["dashboard", "summary", dateRange.from.toISOString(), dateRange.to.toISOString()],
     queryFn: () => dashboardService.getSummary(),
   });
 
   const chartsQuery = useQuery({
-    queryKey: ["dashboard", "charts"],
+    queryKey: ["dashboard", "charts", dateRange.from.toISOString(), dateRange.to.toISOString()],
     queryFn: () => dashboardService.getCharts(),
   });
 
@@ -93,7 +99,7 @@ const Dashboard = () => {
   });
 
   const transactionsQuery = useQuery({
-    queryKey: ["transactions", { page: 1, pageSize: 50 }],
+    queryKey: ["transactions", { page: 1, pageSize: 50, startDate: dateRange.from.toISOString(), endDate: dateRange.to.toISOString() }],
     queryFn: () => transactionService.listPaginated({ page: 1, pageSize: 50 }),
   });
 
@@ -143,8 +149,13 @@ const Dashboard = () => {
     });
   })();
 
+  // Filter transactions by date range
   const transactions =
     transactionsQuery.data?.items
+      .filter((t) => {
+        const transactionDate = t.date;
+        return transactionDate >= dateRange.from && transactionDate <= dateRange.to;
+      })
       .slice()
       .sort((a, b) => b.date.getTime() - a.date.getTime()) ?? [];
 
@@ -178,7 +189,8 @@ const Dashboard = () => {
             Aqui está o resumo das suas finanças
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <DateRangeFilter value={dateRange} onChange={setDateRange} />
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="w-5 h-5" />
             <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full" />

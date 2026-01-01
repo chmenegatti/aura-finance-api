@@ -55,7 +55,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
               exit={{ opacity: 0, width: 0 }}
               className="text-lg font-bold text-sidebar-foreground overflow-hidden whitespace-nowrap"
             >
-              MyFinance
+              Aura Finance
             </motion.span>
           )}
         </AnimatePresence>

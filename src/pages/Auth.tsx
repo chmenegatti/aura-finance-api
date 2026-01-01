@@ -173,7 +173,7 @@ const Auth = () => {
               <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
                 <span className="text-white font-bold text-xl">₣</span>
               </div>
-              <span className="text-white font-bold text-2xl">MyFinance</span>
+              <span className="text-white font-bold text-2xl">Aura Finance</span>
             </Link>
 
             <h1 className="text-4xl xl:text-5xl font-bold text-white mb-6 leading-tight">
@@ -209,7 +209,7 @@ const Auth = () => {
               <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
                 <span className="text-primary-foreground font-bold text-xl">₣</span>
               </div>
-              <span className="text-foreground font-bold text-2xl">MyFinance</span>
+              <span className="text-foreground font-bold text-2xl">Aura Finance</span>
             </Link>
           </div>
 

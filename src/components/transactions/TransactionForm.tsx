@@ -61,10 +61,22 @@ const paymentMethods = [
   "Boleto",
 ];
 
+// Categorias de entrada (income)
+const incomeCategories: Category[] = [
+  { id: "income-salary", name: "Salário", icon: "Wallet", color: "hsl(142, 76%, 36%)" },
+  { id: "income-reimbursement", name: "Reembolsos", icon: "RotateCcw", color: "hsl(200, 70%, 50%)" },
+  { id: "income-dividends", name: "Dividendos", icon: "TrendingUp", color: "hsl(280, 60%, 50%)" },
+  { id: "income-freelance", name: "Freelance", icon: "Briefcase", color: "hsl(43, 90%, 55%)" },
+  { id: "income-investments", name: "Investimentos", icon: "LineChart", color: "hsl(173, 58%, 39%)" },
+  { id: "income-rental", name: "Aluguel Recebido", icon: "Home", color: "hsl(15, 90%, 60%)" },
+  { id: "income-gifts", name: "Presentes", icon: "Gift", color: "hsl(330, 65%, 55%)" },
+  { id: "income-other", name: "Outras Entradas", icon: "Plus", color: "hsl(210, 15%, 50%)" },
+];
+
 export const TransactionForm = ({ open, onOpenChange, onSuccess }: TransactionFormProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [expenseCategories, setExpenseCategories] = useState<Category[]>([]);
   const [type, setType] = useState<"income" | "expense">("expense");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
@@ -80,10 +92,15 @@ export const TransactionForm = ({ open, onOpenChange, onSuccess }: TransactionFo
     }
   }, [open]);
 
+  // Reset category when type changes
+  useEffect(() => {
+    setCategoryId("");
+  }, [type]);
+
   const loadCategories = async () => {
     try {
       const data = await categoryService.list();
-      setCategories(data);
+      setExpenseCategories(data);
     } catch (error) {
       const apiError = error as ApiError;
       toast({
@@ -119,7 +136,10 @@ export const TransactionForm = ({ open, onOpenChange, onSuccess }: TransactionFo
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!description || !amount || !categoryId || !paymentMethod) {
+    // For income, payment method is not required
+    const isPaymentMethodRequired = type === "expense";
+
+    if (!description || !amount || !categoryId || (isPaymentMethodRequired && !paymentMethod)) {
       toast({
         title: "Campos obrigatórios",
         description: "Preencha todos os campos obrigatórios.",
@@ -141,7 +161,7 @@ export const TransactionForm = ({ open, onOpenChange, onSuccess }: TransactionFo
         type: apiType,
         categoryId,
         date: date.toISOString(),
-        paymentMethod,
+        paymentMethod: type === "income" ? "Transferência" : paymentMethod, // Default for income
         isRecurring: false,
       });
 
@@ -177,7 +197,8 @@ export const TransactionForm = ({ open, onOpenChange, onSuccess }: TransactionFo
     }
   };
 
-  const filteredCategories = categories;
+  // Select categories based on type
+  const availableCategories = type === "income" ? incomeCategories : expenseCategories;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -248,7 +269,7 @@ export const TransactionForm = ({ open, onOpenChange, onSuccess }: TransactionFo
             </Label>
             <Input
               id="description"
-              placeholder="Ex: Compra no supermercado"
+              placeholder={type === "income" ? "Ex: Salário mensal" : "Ex: Compra no supermercado"}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="h-12"
@@ -267,7 +288,7 @@ export const TransactionForm = ({ open, onOpenChange, onSuccess }: TransactionFo
                 <SelectTrigger className="h-12">
                   <SelectValue placeholder="Selecione">
                     {categoryId && (() => {
-                      const selectedCategory = filteredCategories.find(c => c.id === categoryId);
+                      const selectedCategory = availableCategories.find(c => c.id === categoryId);
                       return selectedCategory ? (
                         <div className="flex items-center gap-2">
                           <CategoryIcon iconName={selectedCategory.icon} className="w-4 h-4" />
@@ -278,7 +299,7 @@ export const TransactionForm = ({ open, onOpenChange, onSuccess }: TransactionFo
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {filteredCategories.map((category) => (
+                  {availableCategories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       <div className="flex items-center gap-2">
                         <CategoryIcon iconName={category.icon} className="w-4 h-4" />
@@ -322,25 +343,35 @@ export const TransactionForm = ({ open, onOpenChange, onSuccess }: TransactionFo
             </div>
           </div>
 
-          {/* Payment Method */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-primary" />
-              Forma de Pagamento *
-            </Label>
-            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-              <SelectTrigger className="h-12">
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent>
-                {paymentMethods.map((method) => (
-                  <SelectItem key={method} value={method}>
-                    {method}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Payment Method - Only for expenses */}
+          <AnimatePresence>
+            {type === "expense" && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-2"
+              >
+                <Label className="flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-primary" />
+                  Forma de Pagamento *
+                </Label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger className="h-12">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map((method) => (
+                      <SelectItem key={method} value={method}>
+                        {method}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Notes */}
           <div className="space-y-2">
