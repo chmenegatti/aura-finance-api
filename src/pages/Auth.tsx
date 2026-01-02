@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { authService } from "@/services/auth.service";
+import { userService } from "@/services/user.service";
 import { setAuthToken, setStoredUser } from "@/services/auth.storage";
 import type { ApiError } from "@/types/api";
 
@@ -105,13 +106,14 @@ const Auth = () => {
 
     try {
       if (mode === "login") {
-        const authData = await authService.login({
+        const { token } = await authService.login({
           email: formData.email,
           password: formData.password,
         });
 
-        setAuthToken(authData.token);
-        setStoredUser(authData.user);
+        setAuthToken(token);
+        const profile = await userService.getProfile();
+        setStoredUser(profile);
 
         toast({
           title: "Login realizado!",

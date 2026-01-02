@@ -27,6 +27,18 @@ export interface Paginated<T> {
   totalPages: number;
 }
 
+interface TransactionListResponse {
+  transactions: TransactionDTO[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+interface TransactionSingleResponse {
+  transaction: TransactionDTO;
+}
+
 export const transactionService = {
   async listPaginated(params?: TransactionListParams): Promise<Paginated<Transaction>> {
     // Remove undefined values to avoid sending them as strings
@@ -35,12 +47,15 @@ export const transactionService = {
     ) : undefined;
 
     const { data } = await api.get<
-      ApiResponseSuccess<Paginated<TransactionDTO>>
+      ApiResponseSuccess<TransactionListResponse>
     >("/transactions", { params: cleanParams });
 
     return {
-      ...data.data,
-      items: mapTransactions(data.data.items),
+      items: mapTransactions(data.data.transactions),
+      page: data.data.page,
+      pageSize: data.data.pageSize,
+      total: data.data.total,
+      totalPages: data.data.totalPages,
     };
   },
 
@@ -50,26 +65,26 @@ export const transactionService = {
   },
 
   async getById(id: string): Promise<Transaction> {
-    const { data } = await api.get<ApiResponseSuccess<TransactionDTO>>(
+    const { data } = await api.get<ApiResponseSuccess<TransactionSingleResponse>>(
       `/transactions/${id}`
     );
-    return mapTransaction(data.data);
+    return mapTransaction(data.data.transaction);
   },
 
   async create(payload: TransactionCreateRequest): Promise<Transaction> {
-    const { data } = await api.post<ApiResponseSuccess<TransactionDTO>>(
+    const { data } = await api.post<ApiResponseSuccess<TransactionSingleResponse>>(
       "/transactions",
       payload
     );
-    return mapTransaction(data.data);
+    return mapTransaction(data.data.transaction);
   },
 
   async update(id: string, payload: TransactionUpdateRequest): Promise<Transaction> {
-    const { data } = await api.put<ApiResponseSuccess<TransactionDTO>>(
+    const { data } = await api.put<ApiResponseSuccess<TransactionSingleResponse>>(
       `/transactions/${id}`,
       payload
     );
-    return mapTransaction(data.data);
+    return mapTransaction(data.data.transaction);
   },
 
   async remove(id: string): Promise<void> {

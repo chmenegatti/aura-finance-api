@@ -1,0 +1,31 @@
+import fs from "node:fs";
+import path from "node:path";
+
+import { DataSource } from "typeorm";
+
+import { config } from "../config/index.js";
+import { Category } from "../entities/category.entity.js";
+import { RecurringExpense } from "../entities/recurring-expense.entity.js";
+import { Transaction } from "../entities/transaction.entity.js";
+import { User } from "../entities/user.entity.js";
+
+const ensureDatabaseDirectory = () => {
+  const folder = path.dirname(config.dbPath);
+  if (!fs.existsSync(folder)) {
+    fs.mkdirSync(folder, { recursive: true });
+  }
+};
+
+ensureDatabaseDirectory();
+
+const isProduction = config.nodeEnv === "production";
+
+export const AppDataSource = new DataSource({
+  type: "sqlite",
+  database: config.dbPath,
+  synchronize: false,
+  migrationsRun: false,
+  logging: config.nodeEnv === "development",
+  entities: isProduction ? ["dist/entities/*.js"] : [User, Category, Transaction, RecurringExpense],
+  migrations: isProduction ? ["dist/database/migrations/*.js"] : ["src/database/migrations/*.ts"],
+});

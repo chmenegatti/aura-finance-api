@@ -1,7 +1,7 @@
 import * as LucideIcons from "lucide-react";
 import { LucideIcon } from "lucide-react";
 
-// Mapa de nomes de ícones para componentes Lucide
+// Mapa de pseudônimos e ícones com nomes não padronizados
 const iconMap: Record<string, LucideIcon> = {
   // Categorias gerais
   "dumbbell": LucideIcons.Dumbbell,
@@ -43,24 +43,30 @@ const iconMap: Record<string, LucideIcon> = {
   "tint": LucideIcons.Droplet,
 };
 
-export function getIconComponent(iconName: string | null): JSX.Element {
-  if (!iconName) {
-    return <LucideIcons.Tag className="w-full h-full" />;
-  }
+const DEFAULT_ICON = LucideIcons.Tag;
 
-  const IconComponent = iconMap[iconName];
-
-  if (IconComponent) {
-    return <IconComponent className="w-full h-full" />;
-  }
-
-  // Fallback para ícone padrão
-  return <LucideIcons.Tag className="w-full h-full" />;
+function getDynamicIcon(iconName: string): LucideIcon | undefined {
+  return (LucideIcons as Record<string, LucideIcon>)[iconName];
 }
 
-export function getIconName(iconName: string | null): string {
-  if (!iconName || !iconMap[iconName]) {
-    return "🏷️";
+export function getIconComponent(iconName: string | null): JSX.Element {
+  if (!iconName) {
+    return <DEFAULT_ICON className="w-full h-full" />;
   }
-  return iconName;
+
+  const normalizedKey = iconName.toLowerCase();
+  const mappedIcon = iconMap[normalizedKey];
+
+  if (mappedIcon) {
+    const MappedIcon = mappedIcon;
+    return <MappedIcon className="w-full h-full" />;
+  }
+
+  const dynamicIcon = getDynamicIcon(iconName);
+  if (dynamicIcon) {
+    const DynamicIcon = dynamicIcon;
+    return <DynamicIcon className="w-full h-full" />;
+  }
+
+  return <DEFAULT_ICON className="w-full h-full" />;
 }

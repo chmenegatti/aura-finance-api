@@ -11,6 +11,7 @@ export function mapCategory(dto: CategoryDTO): Category {
     icon: dto.icon ?? DEFAULT_CATEGORY_ICON,
     color: dto.color ?? DEFAULT_CATEGORY_COLOR,
     userId: dto.userId,
+    type: dto.type,
   };
 }
 

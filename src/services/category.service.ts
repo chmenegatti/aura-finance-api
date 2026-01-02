@@ -1,44 +1,29 @@
 import { api } from "./api";
 import type { ApiResponseSuccess } from "@/types/api";
-import type { Category, CategoryDTO } from "@/types/category";
+import type { Category, CategoryDTO, CategoryType } from "@/types/category";
 import { mapCategory } from "./mappers";
 
 export interface CategoryCreateRequest {
   name: string;
   icon?: string | null;
   color?: string | null;
+  type: CategoryType;
 }
 
 export interface CategoryUpdateRequest {
   name?: string;
   icon?: string | null;
   color?: string | null;
-}
-
-export interface Paginated<T> {
-  items: T[];
-  page: number;
-  pageSize: number;
-  total: number;
-  totalPages: number;
+  type?: CategoryType;
 }
 
 export const categoryService = {
-  async listPaginated(params?: { page?: number; pageSize?: number }): Promise<Paginated<Category>> {
-    const { data } = await api.get<ApiResponseSuccess<Paginated<CategoryDTO>>>(
+  async list(): Promise<Category[]> {
+    const { data } = await api.get<ApiResponseSuccess<{ categories: CategoryDTO[] }>>(
       "/categories",
-      { params }
     );
 
-    return {
-      ...data.data,
-      items: data.data.items.map(mapCategory),
-    };
-  },
-
-  async list(): Promise<Category[]> {
-    const { items } = await this.listPaginated({ page: 1, pageSize: 100 });
-    return items;
+    return data.data.categories.map(mapCategory);
   },
 
   async getById(id: string): Promise<Category> {

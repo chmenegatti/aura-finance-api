@@ -60,6 +60,11 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## Backend
+
+- A nova pasta `backend/` contém o monolítico em Node.js + TypeScript pronto para autenticação, SQLite (TypeORM), JWT, validação e documentação com Swagger.
+- Veja `backend/README.md` para instruções de configuração, execução e uso da API protegida.
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.

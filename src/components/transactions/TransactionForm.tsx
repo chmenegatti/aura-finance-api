@@ -42,8 +42,8 @@ import { categoryService } from "@/services/category.service";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { transactionService } from "@/services/transaction.service";
 import { receiptService } from "@/services/receipt.service";
-import type { Category } from "@/types/category";
-import type { TransactionApiType } from "@/types/transaction";
+import type { Category, CategoryType } from "@/types/category";
+import type { TransactionApiType, TransactionType } from "@/types/transaction";
 import type { ApiError } from "@/types/api";
 
 interface TransactionFormProps {
@@ -61,22 +61,15 @@ const paymentMethods = [
   "Boleto",
 ];
 
-// Categorias de entrada (income)
-const incomeCategories: Category[] = [
-  { id: "income-salary", name: "Salário", icon: "Wallet", color: "hsl(142, 76%, 36%)" },
-  { id: "income-reimbursement", name: "Reembolsos", icon: "RotateCcw", color: "hsl(200, 70%, 50%)" },
-  { id: "income-dividends", name: "Dividendos", icon: "TrendingUp", color: "hsl(280, 60%, 50%)" },
-  { id: "income-freelance", name: "Freelance", icon: "Briefcase", color: "hsl(43, 90%, 55%)" },
-  { id: "income-investments", name: "Investimentos", icon: "LineChart", color: "hsl(173, 58%, 39%)" },
-  { id: "income-rental", name: "Aluguel Recebido", icon: "Home", color: "hsl(15, 90%, 60%)" },
-  { id: "income-gifts", name: "Presentes", icon: "Gift", color: "hsl(330, 65%, 55%)" },
-  { id: "income-other", name: "Outras Entradas", icon: "Plus", color: "hsl(210, 15%, 50%)" },
-];
+const CATEGORY_TYPE_BY_TRANSACTION: Record<TransactionType, CategoryType> = {
+  income: "INCOMING",
+  expense: "OUTCOMING",
+};
 
 export const TransactionForm = ({ open, onOpenChange, onSuccess }: TransactionFormProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [expenseCategories, setExpenseCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [type, setType] = useState<"income" | "expense">("expense");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
@@ -100,7 +93,7 @@ export const TransactionForm = ({ open, onOpenChange, onSuccess }: TransactionFo
   const loadCategories = async () => {
     try {
       const data = await categoryService.list();
-      setExpenseCategories(data);
+      setCategories(data);
     } catch (error) {
       const apiError = error as ApiError;
       toast({
@@ -198,7 +191,9 @@ export const TransactionForm = ({ open, onOpenChange, onSuccess }: TransactionFo
   };
 
   // Select categories based on type
-  const availableCategories = type === "income" ? incomeCategories : expenseCategories;
+  const categoryType = CATEGORY_TYPE_BY_TRANSACTION[type];
+  const availableCategories = categories.filter((category) => category.type === categoryType);
+  const selectedCategory = categories.find((category) => category.id === categoryId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -287,26 +282,31 @@ export const TransactionForm = ({ open, onOpenChange, onSuccess }: TransactionFo
               <Select value={categoryId} onValueChange={setCategoryId}>
                 <SelectTrigger className="h-12">
                   <SelectValue placeholder="Selecione">
-                    {categoryId && (() => {
-                      const selectedCategory = availableCategories.find(c => c.id === categoryId);
-                      return selectedCategory ? (
-                        <div className="flex items-center gap-2">
-                          <CategoryIcon iconName={selectedCategory.icon} className="w-4 h-4" />
-                          <span>{selectedCategory.name}</span>
-                        </div>
-                      ) : "Selecione";
-                    })()}
+                    {selectedCategory && (
+                      <div className="flex items-center gap-2">
+                        <CategoryIcon iconName={selectedCategory.icon} className="w-4 h-4" />
+                        <span>{selectedCategory.name}</span>
+                      </div>
+                    )}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {availableCategories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      <div className="flex items-center gap-2">
-                        <CategoryIcon iconName={category.icon} className="w-4 h-4" />
-                        <span>{category.name}</span>
-                      </div>
+                  {availableCategories.length === 0 ? (
+                    <SelectItem value="__empty" disabled className="cursor-default">
+                      {type === "income"
+                        ? "Nenhuma categoria de entrada cadastrada"
+                        : "Nenhuma categoria de saída cadastrada"}
                     </SelectItem>
-                  ))}
+                  ) : (
+                    availableCategories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        <div className="flex items-center gap-2">
+                          <CategoryIcon iconName={category.icon} className="w-4 h-4" />
+                          <span>{category.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>

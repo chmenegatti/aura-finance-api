@@ -1,8 +1,11 @@
 import type { User } from "./user";
 
-export interface AuthData {
-  user: User;
+export interface AuthTokenData {
   token: string;
+}
+
+export interface AuthData extends AuthTokenData {
+  user: User;
 }
 
 export interface LoginRequest {
