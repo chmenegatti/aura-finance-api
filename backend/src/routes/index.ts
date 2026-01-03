@@ -1,11 +1,11 @@
 import { Router } from "express";
 
-import authRoutes from "./auth.routes.js";
-import categoryRoutes from "./category.routes.js";
-import transactionRoutes from "./transaction.routes.js";
-import userRoutes from "./user.routes.js";
-import recurringExpenseRoutes from "./recurring-expense.routes.js";
-import dashboardRoutes from "./dashboard.routes.js";
+import authRoutes from "../modules/auth/routes.js";
+import categoryRoutes from "../modules/category/routes.js";
+import transactionRoutes from "../modules/transaction/routes.js";
+import userRoutes from "../modules/users/routes.js";
+import recurringExpenseRoutes from "../modules/recurring-expense/routes.js";
+import dashboardRoutes from "../modules/dashboard/routes.js";
 
 const router = Router();
 

@@ -4,10 +4,10 @@ import path from "node:path";
 import { DataSource } from "typeorm";
 
 import { config } from "../config/index.js";
-import { Category } from "../entities/category.entity.js";
-import { RecurringExpense } from "../entities/recurring-expense.entity.js";
-import { Transaction } from "../entities/transaction.entity.js";
-import { User } from "../entities/user.entity.js";
+import { Category } from "../modules/category/entities/category.entity.js";
+import { RecurringExpense } from "../modules/recurring-expense/entities/recurring-expense.entity.js";
+import { Transaction } from "../modules/transaction/entities/transaction.entity.js";
+import { User } from "../modules/users/entities/user.entity.js";
 
 const ensureDatabaseDirectory = () => {
   const folder = path.dirname(config.dbPath);

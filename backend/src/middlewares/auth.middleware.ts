@@ -1,7 +1,7 @@
 import jsonwebtoken from "jsonwebtoken";
 import { NextFunction, Response } from "express";
 
-import { UserRepository } from "../repositories/user.repository.js";
+import { UserRepository } from "../modules/users/repositories/user.repository.js";
 import { UnauthorizedError } from "../errors/AppError.js";
 import { verifyJwt } from "../utils/jwt.js";
 import { AuthenticatedRequest } from "../types/authenticated-request.js";

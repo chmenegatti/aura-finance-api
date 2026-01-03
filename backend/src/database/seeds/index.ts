@@ -1,9 +1,9 @@
 import bcrypt from "bcrypt";
 
 import { AppDataSource } from "../data-source.js";
-import { CategoryType } from "../../entities/category.entity.js";
-import { CategoryRepository } from "../../repositories/category.repository.js";
-import { UserRepository } from "../../repositories/user.repository.js";
+import { CategoryType } from "../../modules/category/entities/category.entity.js";
+import { CategoryRepository } from "../../modules/category/repositories/category.repository.js";
+import { UserRepository } from "../../modules/users/repositories/user.repository.js";
 
 const SEED_PASSWORD = "Seed@123";
 const SEED_USER_EMAIL = "seed@aura-finance.local";
