@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { addDays, addMonths, addYears, endOfMonth, startOfMonth } from "date-fns";
+import { addDays, addMonths, addYears, endOfDay, endOfMonth, startOfMonth } from "date-fns";
 import {
   Plus,
   Search,
@@ -227,6 +227,10 @@ const Transactions = () => {
     matchesFilter(t.type, t.description, t.category.name),
   );
 
+  const today = endOfDay(new Date());
+  const transactionsUpToToday = filteredTransactions.filter((t) => t.date <= today);
+  const recurringTransactionsUpToToday = recurringTransactionRows.filter((t) => t.date <= today);
+
   const totalIncome = filteredTransactions
     .filter(t => t.type === "income")
     .reduce((acc, t) => acc + t.amount, 0);
@@ -235,13 +239,30 @@ const Transactions = () => {
     .filter(t => t.type === "expense")
     .reduce((acc, t) => acc + t.amount, 0);
 
-  const totalExpenseWithRecurring = totalExpense + recurringExpensesTotal;
+  const totalIncomeUpToToday = transactionsUpToToday
+    .filter(t => t.type === "income")
+    .reduce((acc, t) => acc + t.amount, 0);
 
-  const balanceWithRecurring = totalIncome - totalExpenseWithRecurring;
+  const totalExpenseUpToToday = transactionsUpToToday
+    .filter(t => t.type === "expense")
+    .reduce((acc, t) => acc + t.amount, 0);
 
-  const transactionsForList = [...filteredRecurringTransactions, ...filteredTransactions].sort(
-    (a, b) => b.date.getTime() - a.date.getTime(),
-  );
+  const recurringExpensesUpToToday = recurringTransactionsUpToToday.reduce((acc, expense) => acc + expense.amount, 0);
+  const totalExpenseWithRecurring = totalExpenseUpToToday + recurringExpensesUpToToday;
+
+  const balanceWithRecurring = totalIncomeUpToToday - (totalExpenseUpToToday + recurringExpensesUpToToday);
+
+  const realizedTransactions = filteredTransactions
+    .filter((t) => t.date <= today)
+    .sort((a, b) => b.date.getTime() - a.date.getTime());
+  const futureTransactions = filteredRecurringTransactions
+    .filter((t) => t.date > today)
+    .sort((a, b) => b.date.getTime() - a.date.getTime());
+
+  const transactionSections = [
+    { key: "realized", title: "Transações realizadas", transactions: realizedTransactions },
+    { key: "future", title: "Transações futuras", transactions: futureTransactions },
+  ];
 
   const isListLoading = transactionsQuery.isLoading || recurringQuery.isLoading;
 
@@ -356,9 +377,6 @@ const Transactions = () => {
               <div className="text-2xl font-bold text-expense">
                 {formatCurrency(recurringExpensesTotal)}
               </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                No período selecionado
-              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -430,99 +448,113 @@ const Transactions = () => {
                   <Skeleton key={i} className="h-16" />
                 ))}
               </div>
-            ) : transactionsForList.length === 0 ? (
-              <div className="p-8 text-center text-muted-foreground">
-                Nenhuma transação encontrada
-              </div>
             ) : (
-              <div className="divide-y divide-border/50">
-                {transactionsForList.map((transaction, index) => (
-                  <motion.div
-                    key={transaction.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: 0.3 + index * 0.03 }}
-                    className="flex items-center justify-between p-4 hover:bg-secondary/30 transition-colors cursor-pointer group"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-                        style={{ backgroundColor: `${transaction.category.color}20` }}
-                      >
-                        <CategoryIcon iconName={transaction.category.icon} className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-foreground">
-                          {transaction.description}
-                        </div>
-                        <div className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
-                          <span className="bg-secondary px-2 py-0.5 rounded-md text-xs">
-                            {transaction.category.name}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {formatFullDate(transaction.date)}
-                          </span>
-                          {transaction.paymentMethod && (
-                            <span className="text-xs">{transaction.paymentMethod}</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`text-lg font-bold ${transaction.type === "income"
-                          ? "text-income"
-                          : "text-expense"
-                          }`}
-                      >
-                        {transaction.type === "income" ? "+" : "-"}
-                        {formatCurrency(transaction.amount)}
+              <div className="space-y-6 p-4">
+                {transactionSections.map((section, sectionIndex) => (
+                  <div key={section.key} className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-foreground">{section.title}</h3>
+                      <span className="text-xs text-muted-foreground">
+                        {section.transactions.length} registro{section.transactions.length === 1 ? "" : "s"}
                       </span>
-                      {transaction.type === "income" ? (
-                        <ArrowUpRight className="w-5 h-5 text-income" />
-                      ) : (
-                        <ArrowDownRight className="w-5 h-5 text-expense" />
-                      )}
-                      {!transaction.id.startsWith("recurring-") && (
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleEditTransaction(transaction);
-                            }}
-                            className="p-2 rounded-lg border border-border/60 text-muted-foreground hover:text-foreground hover:border-foreground transition"
-                            aria-label="Editar transação"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button
-                                type="button"
-                                className="p-2 rounded-lg border border-border/60 text-muted-foreground hover:text-foreground hover:border-foreground transition"
-                                aria-label="Abrir ações"
-                              >
-                                <MoreVertical className="w-4 h-4" />
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  handleDeleteTransaction(transaction);
-                                }}
-                              >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Excluir
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      )}
                     </div>
-                  </motion.div>
+                    {section.transactions.length === 0 ? (
+                      <div className="rounded-xl border border-border/60 bg-muted/5 p-4 text-sm text-muted-foreground">
+                        Nenhuma transação nessa seção
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-border/50 rounded-xl overflow-hidden">
+                        {section.transactions.map((transaction, index) => (
+                          <motion.div
+                            key={transaction.id}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.3, delay: 0.3 + sectionIndex * 0.05 + index * 0.03 }}
+                            className="flex items-center justify-between p-4 hover:bg-secondary/30 transition-colors cursor-pointer group"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div
+                                className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
+                                style={{ backgroundColor: `${transaction.category.color}20` }}
+                              >
+                                <CategoryIcon iconName={transaction.category.icon} className="w-6 h-6" />
+                              </div>
+                              <div>
+                                <div className="font-semibold text-foreground">
+                                  {transaction.description}
+                                </div>
+                                <div className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
+                                  <span className="bg-secondary px-2 py-0.5 rounded-md text-xs">
+                                    {transaction.category.name}
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="w-3 h-3" />
+                                    {formatFullDate(transaction.date)}
+                                  </span>
+                                  {transaction.paymentMethod && (
+                                    <span className="text-xs">{transaction.paymentMethod}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span
+                                className={`text-lg font-bold ${transaction.type === "income"
+                                  ? "text-income"
+                                  : "text-expense"
+                                  }`}
+                              >
+                                {transaction.type === "income" ? "+" : "-"}
+                                {formatCurrency(transaction.amount)}
+                              </span>
+                              {transaction.type === "income" ? (
+                                <ArrowUpRight className="w-5 h-5 text-income" />
+                              ) : (
+                                <ArrowDownRight className="w-5 h-5 text-expense" />
+                              )}
+                              {!transaction.id.startsWith("recurring-") && (
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      handleEditTransaction(transaction);
+                                    }}
+                                    className="p-2 rounded-lg border border-border/60 text-muted-foreground hover:text-foreground hover:border-foreground transition"
+                                    aria-label="Editar transação"
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </button>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <button
+                                        type="button"
+                                        className="p-2 rounded-lg border border-border/60 text-muted-foreground hover:text-foreground hover:border-foreground transition"
+                                        aria-label="Abrir ações"
+                                      >
+                                        <MoreVertical className="w-4 h-4" />
+                                      </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          handleDeleteTransaction(transaction);
+                                        }}
+                                      >
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Excluir
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             )}

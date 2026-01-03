@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Plus, Bell } from "lucide-react";
 import { useState } from "react";
-import { startOfMonth, endOfMonth } from "date-fns";
+import { startOfMonth, endOfMonth, endOfDay, isAfter } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { SummaryCards } from "@/components/dashboard/SummaryCards";
@@ -91,8 +91,10 @@ const Dashboard = () => {
     to: endOfMonth(new Date()),
   });
 
+  const today = endOfDay(new Date());
+  const effectiveEndDate = isAfter(dateRange.to, today) ? today : dateRange.to;
   const startDateIso = dateRange.from.toISOString();
-  const endDateIso = dateRange.to.toISOString();
+  const endDateIso = effectiveEndDate.toISOString();
 
   const summaryQuery = useQuery({
     queryKey: ["dashboard", "summary", startDateIso, endDateIso],

@@ -57,8 +57,10 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: index * 0.1 }}
           >
-            <Card className={`${item.gradient} border-0 overflow-hidden group cursor-pointer hover:scale-[1.02] transition-transform duration-300`}>
-              <div className="p-5 md:p-6">
+            <Card
+              className={`${item.gradient} border-0 overflow-hidden group cursor-pointer hover:scale-[1.02] transition-transform duration-300 h-full min-h-[200px]`}
+            >
+              <div className="p-5 md:p-6 flex flex-col h-full justify-between">
                 <div className="flex items-center justify-between mb-4">
                   <div className={`${item.iconBg} p-2.5 rounded-xl`}>
                     <Icon className={`h-5 w-5 ${item.textColor}`} />

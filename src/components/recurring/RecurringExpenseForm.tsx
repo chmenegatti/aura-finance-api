@@ -31,12 +31,17 @@ import { recurringExpenseService } from "@/services/recurringExpense.service";
 import { categoryService } from "@/services";
 import { useQuery } from "@tanstack/react-query";
 import type { ApiError } from "@/types/api";
-import type { RecurringFrequencyApi, RecurringExpenseTypeApi } from "@/types/recurringExpense";
+import type {
+  RecurringExpenseDTO,
+  RecurringFrequencyApi,
+  RecurringExpenseTypeApi,
+} from "@/types/recurringExpense";
 
 interface RecurringExpenseFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  recurringExpense?: RecurringExpenseDTO | null;
 }
 
 const EXPENSE_TYPES: { value: RecurringExpenseTypeApi; label: string; icon: string }[] = [
@@ -52,7 +57,7 @@ const FREQUENCY_OPTIONS: { value: RecurringFrequencyApi; label: string }[] = [
   { value: "CUSTOM", label: "Personalizado" },
 ];
 
-export const RecurringExpenseForm = ({ open, onOpenChange, onSuccess }: RecurringExpenseFormProps) => {
+export const RecurringExpenseForm = ({ open, onOpenChange, onSuccess, recurringExpense }: RecurringExpenseFormProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [description, setDescription] = useState("");
@@ -65,6 +70,7 @@ export const RecurringExpenseForm = ({ open, onOpenChange, onSuccess }: Recurrin
   const [totalInstallments, setTotalInstallments] = useState("12");
   const [currentInstallment, setCurrentInstallment] = useState("0");
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  const isEditMode = Boolean(recurringExpense);
   const categoriesQuery = useQuery({
     queryKey: ["categories"],
     queryFn: () => categoryService.list(),
@@ -73,10 +79,33 @@ export const RecurringExpenseForm = ({ open, onOpenChange, onSuccess }: Recurrin
   const categories = categoriesQuery.data ?? [];
 
   useEffect(() => {
-    if (!selectedCategoryId && categories.length > 0) {
+    if (!recurringExpense && !selectedCategoryId && categories.length > 0) {
       setSelectedCategoryId(categories[0].id);
     }
-  }, [categories, selectedCategoryId]);
+  }, [categories, recurringExpense, selectedCategoryId]);
+
+  useEffect(() => {
+    if (!recurringExpense) {
+      return;
+    }
+
+    setDescription(recurringExpense.description);
+    setAmount(recurringExpense.amount);
+    setType(recurringExpense.type);
+    setFrequency(recurringExpense.frequency);
+    setCustomIntervalDays(recurringExpense.customIntervalDays?.toString() ?? "");
+    setStartDate(new Date(recurringExpense.startDate));
+    setEndDate(recurringExpense.endDate ? new Date(recurringExpense.endDate) : undefined);
+    setTotalInstallments(recurringExpense.totalInstallments.toString());
+    setCurrentInstallment(recurringExpense.currentInstallment.toString());
+    setSelectedCategoryId(recurringExpense.categoryId);
+  }, [recurringExpense]);
+
+  useEffect(() => {
+    if (!open) {
+      resetForm();
+    }
+  }, [open]);
 
   const resetForm = () => {
     setDescription("");
@@ -121,26 +150,39 @@ export const RecurringExpenseForm = ({ open, onOpenChange, onSuccess }: Recurrin
       return;
     }
 
+    const parsedCustomInterval =
+      frequency === "CUSTOM" ? parseInt(customIntervalDays, 10) : undefined;
+    const totalInstallmentsValue = parseInt(totalInstallments, 10) || 0;
+    const currentInstallmentValue = parseInt(currentInstallment, 10) || 0;
+    const payload = {
+      description: description.trim(),
+      amount: parseFloat(amount),
+      startDate: startDate.toISOString(),
+      endDate: endDate ? endDate.toISOString() : undefined,
+      frequency,
+      customIntervalDays: parsedCustomInterval,
+      totalInstallments: totalInstallmentsValue,
+      currentInstallment: currentInstallmentValue,
+      type,
+      categoryId: selectedCategoryId,
+    };
+
     setIsLoading(true);
 
     try {
-      await recurringExpenseService.create({
-        description: description.trim(),
-        amount: parseFloat(amount),
-        startDate: startDate.toISOString(),
-        endDate: endDate ? endDate.toISOString() : undefined,
-        frequency,
-        customIntervalDays: frequency === "CUSTOM" ? parseInt(customIntervalDays) : undefined,
-        totalInstallments: parseInt(totalInstallments),
-        currentInstallment: parseInt(currentInstallment),
-        type,
-        categoryId: selectedCategoryId,
-      });
-
-      toast({
-        title: "Gasto recorrente criado!",
-        description: `"${description}" foi adicionado com sucesso.`,
-      });
+      if (isEditMode && recurringExpense) {
+        await recurringExpenseService.update(recurringExpense.id, payload);
+        toast({
+          title: "Gasto recorrente atualizado!",
+          description: `"${description}" foi atualizado com sucesso.`,
+        });
+      } else {
+        await recurringExpenseService.create(payload);
+        toast({
+          title: "Gasto recorrente criado!",
+          description: `"${description}" foi adicionado com sucesso.`,
+        });
+      }
 
       resetForm();
       onOpenChange(false);
@@ -161,7 +203,9 @@ export const RecurringExpenseForm = ({ open, onOpenChange, onSuccess }: Recurrin
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[540px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">Novo Gasto Recorrente</DialogTitle>
+          <DialogTitle className="text-xl font-bold">
+            {isEditMode ? "Editar Gasto Recorrente" : "Novo Gasto Recorrente"}
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6 mt-4">
@@ -395,7 +439,7 @@ export const RecurringExpenseForm = ({ open, onOpenChange, onSuccess }: Recurrin
                   className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full"
                 />
               ) : (
-                "Criar Gasto"
+                isEditMode ? "Salvar alterações" : "Criar Gasto"
               )}
             </Button>
           </div>

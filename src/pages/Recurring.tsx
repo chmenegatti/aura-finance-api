@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Plus, Calendar, AlertCircle, Pause, Play, MoreHorizontal } from "lucide-react";
+import { Plus, Calendar, AlertCircle, Pause, Play, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -12,6 +12,14 @@ import type { RecurringExpense, RecurringExpenseDTO } from "@/types/recurringExp
 import { Skeleton } from "@/components/ui/skeleton";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { RecurringExpenseForm } from "@/components/recurring/RecurringExpenseForm";
+import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import type { ApiError } from "@/types/api";
 
 function mapRecurringToUi(dto: RecurringExpenseDTO): RecurringExpense {
   const startDate = new Date(dto.startDate);
@@ -49,13 +57,44 @@ function mapRecurringToUi(dto: RecurringExpenseDTO): RecurringExpense {
 
 const Recurring = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedRecurringExpense, setSelectedRecurringExpense] = useState<RecurringExpenseDTO | null>(null);
+  const { toast } = useToast();
 
   const recurringQuery = useQuery({
     queryKey: ["recurring-expenses", { page: 1, pageSize: 100 }],
     queryFn: () => recurringExpenseService.listPaginated({ page: 1, pageSize: 100 }),
   });
 
-  const recurringExpenses = recurringQuery.data?.items.map(mapRecurringToUi) ?? [];
+  const recurringDtos = recurringQuery.data?.items ?? [];
+  const recurringExpenses = recurringDtos.map(mapRecurringToUi);
+
+  const handleEditRecurring = (expense: RecurringExpenseDTO) => {
+    setSelectedRecurringExpense(expense);
+    setIsFormOpen(true);
+  };
+
+  const handleDeleteRecurring = async (expense: RecurringExpenseDTO) => {
+    const confirmed = window.confirm("Tem certeza de que deseja excluir este gasto recorrente?");
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await recurringExpenseService.remove(expense.id);
+      toast({
+        title: "Gasto recorrente removido",
+        description: `"${expense.description}" foi excluído.`,
+      });
+      recurringQuery.refetch();
+    } catch (error) {
+      const apiError = error as ApiError;
+      toast({
+        title: "Erro ao excluir gasto recorrente",
+        description: apiError.message,
+        variant: "destructive",
+      });
+    }
+  };
 
   const totalMonthly = recurringExpenses
     .filter(e => e.isActive && e.frequency === "monthly")
@@ -67,8 +106,14 @@ const Recurring = () => {
     <MainLayout>
       <RecurringExpenseForm
         open={isFormOpen}
-        onOpenChange={setIsFormOpen}
+        onOpenChange={(open) => {
+          setIsFormOpen(open);
+          if (!open) {
+            setSelectedRecurringExpense(null);
+          }
+        }}
         onSuccess={() => recurringQuery.refetch()}
+        recurringExpense={selectedRecurringExpense}
       />
 
       {/* Header */}
@@ -86,7 +131,15 @@ const Recurring = () => {
             Gerencie suas despesas fixas e assinaturas
           </p>
         </div>
-        <Button variant="default" size="lg" className="gap-2" onClick={() => setIsFormOpen(true)}>
+        <Button
+          variant="default"
+          size="lg"
+          className="gap-2"
+          onClick={() => {
+            setSelectedRecurringExpense(null);
+            setIsFormOpen(true);
+          }}
+        >
           <Plus className="w-5 h-5" />
           <span>Novo Recorrente</span>
         </Button>
@@ -143,6 +196,10 @@ const Recurring = () => {
             Nenhum recorrente encontrado
           </div>
         ) : recurringExpenses.map((expense, index) => {
+          const dto = recurringDtos[index];
+          if (!dto) {
+            return null;
+          }
           const today = new Date().getDate();
           const isNearDue = expense.dueDay - today <= 5 && expense.dueDay - today >= 0;
           const isPastDue = expense.dueDay < today;
@@ -169,9 +226,42 @@ const Recurring = () => {
                         <p className="text-sm text-muted-foreground">{expense.category.name}</p>
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        aria-label="Editar gasto recorrente"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleEditRecurring(dto);
+                        }}
+                        className="p-2 rounded-lg border border-border/60 text-muted-foreground hover:text-foreground hover:border-foreground transition"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            aria-label="Abrir menu do gasto recorrente"
+                            onClick={(event) => event.stopPropagation()}
+                            className="p-2 rounded-lg border border-border/60 text-muted-foreground hover:text-foreground hover:border-foreground transition"
+                          >
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleDeleteRecurring(dto);
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
 
                   <div className="text-2xl font-bold text-foreground mb-4">

@@ -22,16 +22,19 @@ export function RecurringExpensesCard({ expenses, limit }: RecurringExpensesCard
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.6 }}
     >
-      <Card variant="elevated" className="h-full">
+      <Card variant="elevated" className="h-full min-h-[320px]">
         <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold">Gastos Recorrentes</CardTitle>
-            <div className="text-sm font-medium text-primary">
-              {formatCurrency(totalMonthly)}/mês
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-semibold">Gastos Recorrentes</CardTitle>
+              <div className="text-sm font-medium text-primary">
+                {formatCurrency(totalMonthly)}/mês
+              </div>
             </div>
+            <div className="text-xs text-muted-foreground">Total do mês atual</div>
           </div>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0 min-h-[220px] flex flex-col">
           <div className="divide-y divide-border/50">
             {displayExpenses.map((expense, index) => {
               const today = new Date().getDate();
