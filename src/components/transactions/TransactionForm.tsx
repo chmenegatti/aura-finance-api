@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -43,13 +43,14 @@ import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { transactionService } from "@/services/transaction.service";
 import { receiptService } from "@/services/receipt.service";
 import type { Category, CategoryType } from "@/types/category";
-import type { TransactionApiType, TransactionType } from "@/types/transaction";
+import type { Transaction, TransactionApiType, TransactionType } from "@/types/transaction";
 import type { ApiError } from "@/types/api";
 
 interface TransactionFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  transaction?: Transaction | null;
 }
 
 const paymentMethods = [
@@ -66,7 +67,7 @@ const CATEGORY_TYPE_BY_TRANSACTION: Record<TransactionType, CategoryType> = {
   expense: "OUTCOMING",
 };
 
-export const TransactionForm = ({ open, onOpenChange, onSuccess }: TransactionFormProps) => {
+export const TransactionForm = ({ open, onOpenChange, onSuccess, transaction }: TransactionFormProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -79,14 +80,53 @@ export const TransactionForm = ({ open, onOpenChange, onSuccess }: TransactionFo
   const [notes, setNotes] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
 
+  const isEditing = Boolean(transaction);
+  const skipCategoryReset = useRef(false);
+
+  const resetForm = () => {
+    setType("expense");
+    setDescription("");
+    setAmount("");
+    setCategoryId("");
+    setDate(new Date());
+    setPaymentMethod("");
+    setNotes("");
+    setAttachments([]);
+  };
+
   useEffect(() => {
     if (open) {
       loadCategories();
     }
   }, [open]);
 
-  // Reset category when type changes
   useEffect(() => {
+    if (!open) {
+      resetForm();
+      return;
+    }
+
+    if (transaction) {
+      skipCategoryReset.current = true;
+      setType(transaction.type);
+      setDescription(transaction.description);
+      setAmount(transaction.amount.toFixed(2));
+      setCategoryId(transaction.category.id);
+      setDate(new Date(transaction.date));
+      setPaymentMethod(transaction.paymentMethod ?? "");
+      setNotes(transaction.notes ?? "");
+      setAttachments([]);
+    } else {
+      resetForm();
+    }
+  }, [open, transaction]);
+
+  useEffect(() => {
+    if (skipCategoryReset.current) {
+      skipCategoryReset.current = false;
+      return;
+    }
+
     setCategoryId("");
   }, [type]);
 
@@ -115,17 +155,6 @@ export const TransactionForm = ({ open, onOpenChange, onSuccess }: TransactionFo
     setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const resetForm = () => {
-    setType("expense");
-    setDescription("");
-    setAmount("");
-    setCategoryId("");
-    setDate(new Date());
-    setPaymentMethod("");
-    setNotes("");
-    setAttachments([]);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -146,34 +175,42 @@ export const TransactionForm = ({ open, onOpenChange, onSuccess }: TransactionFo
     try {
       // Convert type to API format
       const apiType: TransactionApiType = type === "income" ? "INCOME" : "EXPENSE";
-
-      // Create transaction
-      const transaction = await transactionService.create({
+      const payload = {
         description,
         amount: parseFloat(amount),
         type: apiType,
         categoryId,
         date: date.toISOString(),
-        paymentMethod: type === "income" ? "Transferência" : paymentMethod, // Default for income
-        isRecurring: false,
-      });
+        paymentMethod: type === "income" ? "Transferência" : paymentMethod,
+        isRecurring: isEditing ? transaction?.isRecurring ?? false : false,
+      };
 
-      // Upload attachments if any
-      for (const file of attachments) {
-        try {
-          await receiptService.upload({
-            transactionId: transaction.id,
-            file,
-          });
-        } catch (error) {
-          console.error("Failed to upload attachment:", error);
+      if (isEditing && transaction) {
+        await transactionService.update(transaction.id, payload);
+        toast({
+          title: "Transação atualizada!",
+          description: `${type === "income" ? "Entrada" : "Saída"} atualizada com sucesso.`,
+        });
+      } else {
+        const createdTransaction = await transactionService.create(payload);
+
+        // Upload attachments if any
+        for (const file of attachments) {
+          try {
+            await receiptService.upload({
+              transactionId: createdTransaction.id,
+              file,
+            });
+          } catch (error) {
+            console.error("Failed to upload attachment:", error);
+          }
         }
-      }
 
-      toast({
-        title: "Transação registrada!",
-        description: `${type === "income" ? "Entrada" : "Saída"} de R$ ${amount} adicionada com sucesso.`,
-      });
+        toast({
+          title: "Transação registrada!",
+          description: `${type === "income" ? "Entrada" : "Saída"} de R$ ${amount} adicionada com sucesso.`,
+        });
+      }
 
       resetForm();
       onOpenChange(false);
@@ -181,7 +218,7 @@ export const TransactionForm = ({ open, onOpenChange, onSuccess }: TransactionFo
     } catch (error) {
       const apiError = error as ApiError;
       toast({
-        title: "Erro ao criar transação",
+        title: isEditing ? "Erro ao atualizar transação" : "Erro ao criar transação",
         description: apiError.message,
         variant: "destructive",
       });
@@ -194,12 +231,21 @@ export const TransactionForm = ({ open, onOpenChange, onSuccess }: TransactionFo
   const categoryType = CATEGORY_TYPE_BY_TRANSACTION[type];
   const availableCategories = categories.filter((category) => category.type === categoryType);
   const selectedCategory = categories.find((category) => category.id === categoryId);
+  const primaryActionLabel = isEditing
+    ? type === "income"
+      ? "Atualizar Entrada"
+      : "Atualizar Saída"
+    : type === "income"
+      ? "Registrar Entrada"
+      : "Registrar Saída";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[540px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">Nova Transação</DialogTitle>
+          <DialogTitle className="text-xl font-bold">
+            {isEditing ? "Editar Transação" : "Nova Transação"}
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6 mt-4">
@@ -388,67 +434,68 @@ export const TransactionForm = ({ open, onOpenChange, onSuccess }: TransactionFo
             />
           </div>
 
-          {/* Attachments */}
-          <div className="space-y-3">
-            <Label className="flex items-center gap-2">
-              <Upload className="w-4 h-4 text-primary" />
-              Comprovantes
-            </Label>
-            <div
-              className="border-2 border-dashed border-border/60 rounded-xl p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
-              onClick={() => document.getElementById("file-upload")?.click()}
-            >
-              <input
-                id="file-upload"
-                type="file"
-                multiple
-                accept="image/*,.pdf"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">
-                Clique ou arraste arquivos aqui
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Imagens ou PDFs
-              </p>
-            </div>
+          {!isEditing && (
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
+                <Upload className="w-4 h-4 text-primary" />
+                Comprovantes
+              </Label>
+              <div
+                className="border-2 border-dashed border-border/60 rounded-xl p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
+                onClick={() => document.getElementById("file-upload")?.click()}
+              >
+                <input
+                  id="file-upload"
+                  type="file"
+                  multiple
+                  accept="image/*,.pdf"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  Clique ou arraste arquivos aqui
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Imagens ou PDFs
+                </p>
+              </div>
 
-            {/* Attachment List */}
-            <AnimatePresence>
-              {attachments.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="space-y-2"
-                >
-                  {attachments.map((file, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 20 }}
-                      className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg"
-                    >
-                      <div className="flex items-center gap-2 truncate">
-                        <FileText className="w-4 h-4 text-primary flex-shrink-0" />
-                        <span className="text-sm truncate">{file.name}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeAttachment(index)}
-                        className="text-muted-foreground hover:text-destructive transition-colors"
+              {/* Attachment List */}
+              <AnimatePresence>
+                {attachments.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-2"
+                  >
+                    {attachments.map((file, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg"
                       >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                        <div className="flex items-center gap-2 truncate">
+                          <FileText className="w-4 h-4 text-primary flex-shrink-0" />
+                          <span className="text-sm truncate">{file.name}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeAttachment(index)}
+                          className="text-muted-foreground hover:text-destructive transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
 
           {/* Submit Button */}
           <div className="flex gap-3 pt-4">
@@ -473,9 +520,7 @@ export const TransactionForm = ({ open, onOpenChange, onSuccess }: TransactionFo
                   transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                 />
               ) : (
-                <>
-                  {type === "income" ? "Registrar Entrada" : "Registrar Saída"}
-                </>
+                primaryActionLabel
               )}
             </Button>
           </div>

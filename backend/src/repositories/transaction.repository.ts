@@ -62,6 +62,67 @@ export class TransactionRepository {
     return { items, total };
   }
 
+  async getSummaryTotals(userId: string, startDate?: Date, endDate?: Date) {
+    const query = this.repository
+      .createQueryBuilder("transaction")
+      .select("transaction.type", "type")
+      .addSelect("SUM(transaction.amount)", "total")
+      .where("transaction.userId = :userId", { userId });
+
+    this.applyDateFilters(query, startDate, endDate);
+
+    query.groupBy("transaction.type");
+
+    return query.getRawMany<{ type: TransactionType; total: string }>();
+  }
+
+  async getMonthlyTotals(userId: string, startDate?: Date, endDate?: Date) {
+    const query = this.repository
+      .createQueryBuilder("transaction")
+      .select("strftime('%Y-%m', transaction.date)", "month")
+      .addSelect("transaction.type", "type")
+      .addSelect("SUM(transaction.amount)", "total")
+      .where("transaction.userId = :userId", { userId });
+
+    this.applyDateFilters(query, startDate, endDate);
+
+    query
+      .groupBy("month")
+      .addGroupBy("transaction.type")
+      .orderBy("month", "ASC");
+
+    return query.getRawMany<{ month: string; type: TransactionType; total: string }>();
+  }
+
+  async getExpensesByCategory(userId: string, startDate?: Date, endDate?: Date) {
+    const query = this.repository
+      .createQueryBuilder("transaction")
+      .select("transaction.categoryId", "categoryId")
+      .addSelect("category.name", "categoryName")
+      .addSelect("SUM(transaction.amount)", "total")
+      .innerJoin("transaction.category", "category")
+      .where("transaction.userId = :userId", { userId })
+      .andWhere("transaction.type = :expense", { expense: TransactionType.EXPENSE });
+
+    this.applyDateFilters(query, startDate, endDate);
+
+    query
+      .groupBy("transaction.categoryId")
+      .orderBy("total", "DESC");
+
+    return query.getRawMany<{ categoryId: string; categoryName: string; total: string }>();
+  }
+
+  private applyDateFilters(query: any, startDate?: Date, endDate?: Date) {
+    if (startDate) {
+      query.andWhere("transaction.date >= :startDate", { startDate });
+    }
+
+    if (endDate) {
+      query.andWhere("transaction.date <= :endDate", { endDate });
+    }
+  }
+
   findById(id: string, userId: string) {
     return this.repository.findOne({ where: { id, userId }, relations: ["category"] });
   }

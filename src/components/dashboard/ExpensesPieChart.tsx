@@ -2,12 +2,13 @@ import { motion } from "framer-motion";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/finance";
+import { CategoryIcon } from "@/components/ui/CategoryIcon";
 
 interface CategoryData {
   name: string;
   value: number;
   color: string;
-  icon: string;
+  iconName: string | null;
 }
 
 interface ExpensesPieChartProps {
@@ -17,13 +18,13 @@ interface ExpensesPieChartProps {
 export function ExpensesPieChart({ data }: ExpensesPieChartProps) {
   const total = data.reduce((sum, item) => sum + item.value, 0);
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: CategoryData }> }) => {
     if (active && payload && payload.length) {
       const item = payload[0].payload;
       return (
         <div className="bg-card/95 backdrop-blur-sm border border-border rounded-lg p-3 shadow-soft-lg">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-lg">{item.icon}</span>
+            <CategoryIcon iconName={item.iconName} className="w-5 h-5" />
             <span className="font-semibold text-foreground">{item.name}</span>
           </div>
           <div className="text-primary font-bold">{formatCurrency(item.value)}</div>
@@ -61,8 +62,8 @@ export function ExpensesPieChart({ data }: ExpensesPieChartProps) {
                     dataKey="value"
                   >
                     {data.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
+                      <Cell
+                        key={`cell-${index}`}
                         fill={entry.color}
                         className="transition-all duration-300 hover:opacity-80 cursor-pointer"
                         stroke="transparent"
@@ -87,7 +88,7 @@ export function ExpensesPieChart({ data }: ExpensesPieChartProps) {
                       className="w-3 h-3 rounded-full"
                       style={{ backgroundColor: item.color }}
                     />
-                    <span className="text-sm">{item.icon}</span>
+                    <CategoryIcon iconName={item.iconName} className="w-4 h-4" />
                     <span className="text-sm font-medium">{item.name}</span>
                   </div>
                   <span className="text-sm font-semibold">{formatCurrency(item.value)}</span>

@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsInt, IsOptional, Min } from "class-validator";
+import { IsDateString, IsInt, IsOptional, Min } from "class-validator";
 
 export class RecurringExpenseListParamsDto {
   @IsOptional()
@@ -13,4 +13,12 @@ export class RecurringExpenseListParamsDto {
   @IsInt()
   @Min(1)
   pageSize?: number;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
 }

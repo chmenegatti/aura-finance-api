@@ -52,11 +52,17 @@ function mapRecurringToUi(dto: RecurringExpenseDTO): RecurringExpense {
   const frequency = dto.frequency === "MONTHLY" ? "monthly" : dto.frequency === "YEARLY" ? "yearly" : "custom";
 
   const iconByType: Record<RecurringExpenseDTO["type"], string> = {
-    FINANCING: "🚗",
-    LOAN: "🏦",
-    SUBSCRIPTION: "🔁",
-    OTHER: "📌",
+    FINANCING: "car",
+    LOAN: "building",
+    SUBSCRIPTION: "repeat",
+    OTHER: "tag",
   };
+
+  const category = dto.category;
+  const categoryIcon = category?.icon ?? iconByType[dto.type] ?? "tag";
+  const categoryColor = category?.color ?? "hsl(var(--muted-foreground))";
+  const categoryName = category?.name ?? dto.type;
+  const categoryType = category?.type ?? "OUTCOMING";
 
   return {
     id: dto.id,
@@ -68,10 +74,12 @@ function mapRecurringToUi(dto: RecurringExpenseDTO): RecurringExpense {
     currentInstallment: dto.currentInstallment,
     isActive,
     category: {
-      id: dto.type,
-      name: dto.type,
-      icon: iconByType[dto.type] ?? "🏷️",
-      color: "hsl(var(--muted-foreground))",
+      id: category?.id ?? dto.categoryId,
+      name: categoryName,
+      icon: categoryIcon,
+      color: categoryColor,
+      type: categoryType,
+      userId: category?.userId,
     },
   };
 }
@@ -83,14 +91,17 @@ const Dashboard = () => {
     to: endOfMonth(new Date()),
   });
 
+  const startDateIso = dateRange.from.toISOString();
+  const endDateIso = dateRange.to.toISOString();
+
   const summaryQuery = useQuery({
-    queryKey: ["dashboard", "summary", dateRange.from.toISOString(), dateRange.to.toISOString()],
-    queryFn: () => dashboardService.getSummary(),
+    queryKey: ["dashboard", "summary", startDateIso, endDateIso],
+    queryFn: () => dashboardService.getSummary({ startDate: startDateIso, endDate: endDateIso }),
   });
 
   const chartsQuery = useQuery({
-    queryKey: ["dashboard", "charts", dateRange.from.toISOString(), dateRange.to.toISOString()],
-    queryFn: () => dashboardService.getCharts(),
+    queryKey: ["dashboard", "charts", startDateIso, endDateIso],
+    queryFn: () => dashboardService.getCharts({ startDate: startDateIso, endDate: endDateIso }),
   });
 
   const categoriesQuery = useQuery({
@@ -98,9 +109,16 @@ const Dashboard = () => {
     queryFn: () => categoryService.list(),
   });
 
+  const transactionListParams = {
+    page: 1,
+    pageSize: 50,
+    startDate: startDateIso,
+    endDate: endDateIso,
+  };
+
   const transactionsQuery = useQuery({
-    queryKey: ["transactions", { page: 1, pageSize: 50, startDate: dateRange.from.toISOString(), endDate: dateRange.to.toISOString() }],
-    queryFn: () => transactionService.listPaginated({ page: 1, pageSize: 50 }),
+    queryKey: ["transactions", transactionListParams],
+    queryFn: () => transactionService.listPaginated(transactionListParams),
   });
 
   const recurringQuery = useQuery({
@@ -144,7 +162,7 @@ const Dashboard = () => {
         name: p.categoryName,
         value: p.total,
         color: cat?.color ?? "hsl(var(--muted-foreground))",
-        icon: cat?.icon ?? "🏷️",
+        iconName: cat?.icon ?? null,
       };
     });
   })();

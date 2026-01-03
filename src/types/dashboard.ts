@@ -27,7 +27,7 @@ export interface PieSlice {
   name: string;
   value: number;
   color: string;
-  icon: string;
+  iconName: string | null;
 }
 
 export interface IncomeExpensePoint {

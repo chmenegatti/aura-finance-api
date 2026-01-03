@@ -14,8 +14,15 @@ export interface Paginated<T> {
   totalPages: number;
 }
 
+export interface RecurringExpenseListParams {
+  page?: number;
+  pageSize?: number;
+  startDate?: string;
+  endDate?: string;
+}
+
 export const recurringExpenseService = {
-  async listPaginated(params?: { page?: number; pageSize?: number }): Promise<Paginated<RecurringExpenseDTO>> {
+  async listPaginated(params?: RecurringExpenseListParams): Promise<Paginated<RecurringExpenseDTO>> {
     const { data } = await api.get<ApiResponseSuccess<Paginated<RecurringExpenseDTO>>>(
       "/recurring-expenses",
       { params }
