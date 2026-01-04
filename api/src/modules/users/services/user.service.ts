@@ -1,12 +1,12 @@
 import { NotFoundError } from "../../../errors/AppError.js";
 import { User } from "../entities/user.entity.js";
-import { UserRepository } from "../repositories/user.repository.js";
+import { databaseProvider } from "../../../database/providers/index.js";
 
 export class UserService {
-  private userRepository = new UserRepository();
+  private userProvider = databaseProvider.users;
 
   async getById(id: string): Promise<User> {
-    const user = await this.userRepository.findById(id);
+    const user = await this.userProvider.findById(id);
 
     if (!user) {
       throw new NotFoundError("User not found");

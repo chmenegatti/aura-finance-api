@@ -1,7 +1,7 @@
 import jsonwebtoken from "jsonwebtoken";
 import { NextFunction, Response } from "express";
 
-import { UserRepository } from "../modules/users/repositories/user.repository.js";
+import { databaseProvider } from "../database/providers/index.js";
 import { UnauthorizedError } from "../errors/AppError.js";
 import { verifyJwt } from "../utils/jwt.js";
 import { AuthenticatedRequest } from "../types/authenticated-request.js";
@@ -25,7 +25,7 @@ export const authMiddleware = async (
     }
 
     const payload = verifyJwt<{ userId: string }>(token);
-    const user = await new UserRepository().findById(payload.userId);
+    const user = await databaseProvider.users.findById(payload.userId);
 
     if (!user) {
       throw new UnauthorizedError("User not found");

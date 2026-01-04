@@ -18,7 +18,9 @@ const ensureDatabaseDirectory = () => {
   }
 };
 
-ensureDatabaseDirectory();
+if (!config.useRemoteDatabase) {
+  ensureDatabaseDirectory();
+}
 
 const isProduction = config.nodeEnv === "production";
 

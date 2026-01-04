@@ -382,7 +382,7 @@ router.put(
  *           type: string
  *           enum: [single, group]
  *           default: single
- *         description: `group` remove todas as parcelas desde que nenhuma fatura esteja fechada.
+ *         description: "'group' remove todas as parcelas desde que nenhuma fatura esteja fechada."
  *     responses:
  *       204:
  *         description: Despesa removida

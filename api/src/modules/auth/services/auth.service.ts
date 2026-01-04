@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 
 import { ConflictError, UnauthorizedError } from "../../../errors/AppError.js";
-import { UserRepository } from "../../users/repositories/user.repository.js";
+import { databaseProvider } from "../../../database/providers/index.js";
 import { LoginUserDto } from "../dtos/auth-login.dto.js";
 import { RegisterUserDto } from "../dtos/auth-register.dto.js";
 import { signJwt } from "../../../utils/jwt.js";
@@ -9,10 +9,10 @@ import { signJwt } from "../../../utils/jwt.js";
 const SALT_ROUNDS = 10;
 
 export class AuthService {
-  private userRepository = new UserRepository();
+  private userProvider = databaseProvider.users;
 
   async register(payload: RegisterUserDto) {
-    const existingUser = await this.userRepository.findByEmail(payload.email);
+    const existingUser = await this.userProvider.findByEmail(payload.email);
 
     if (existingUser) {
       throw new ConflictError("Email already in use");
@@ -20,7 +20,7 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(payload.password, SALT_ROUNDS);
 
-    const user = await this.userRepository.create({
+    const user = await this.userProvider.create({
       name: payload.name,
       email: payload.email,
       passwordHash,
@@ -35,7 +35,7 @@ export class AuthService {
   }
 
   async login(payload: LoginUserDto) {
-    const user = await this.userRepository.findByEmail(payload.email);
+    const user = await this.userProvider.findByEmail(payload.email);
 
     if (!user) {
       throw new UnauthorizedError("Invalid credentials");

@@ -23,11 +23,21 @@ const corsOrigins = process.env.CORS_ORIGIN
   )
   : defaultCorsOrigins;
 
+const nodeEnv = (process.env.NODE_ENV ?? "development").trim();
+const isProduction = nodeEnv === "production";
+const productionDatabaseUrl = process.env.TURSO_DATABASE_URL?.trim();
+const productionAuthToken = process.env.TURSO_AUTH_TOKEN?.trim();
+
+
 export const env = {
-  nodeEnv: (process.env.NODE_ENV ?? "development").trim(),
+  nodeEnv,
+  isProduction,
   port: Number(process.env.PORT ?? 4000),
   jwtSecret: getRequired(process.env.JWT_SECRET, "JWT_SECRET"),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "1h",
-  dbPath: path.resolve(process.cwd(), process.env.DB_PATH ?? "data/aura-finance.sqlite"),
+  dbPath: isProduction
+    ? getRequired(productionDatabaseUrl, "TURSO_DATABASE_URL")
+    : path.resolve(process.cwd(), process.env.DB_PATH ?? "data/aura-finance.sqlite"),
+  tursoAuthToken: isProduction ? getRequired(productionAuthToken, "TURSO_AUTH_TOKEN") : undefined,
   corsOrigins,
 };
