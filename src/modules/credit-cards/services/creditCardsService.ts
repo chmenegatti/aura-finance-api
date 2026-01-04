@@ -2,6 +2,7 @@ import { api } from "@/services/api";
 import type { ApiResponseSuccess } from "@/types/api";
 import type {
   CreateCreditCardExpenseRequest,
+  CreateCreditCardRequest,
   CreditCard,
   CreditCardDTO,
   CreditCardExpense,
@@ -53,6 +54,15 @@ export const creditCardsService = {
       "/credit-cards",
     );
     return data.data.creditCards.map(mapCreditCard);
+  },
+
+  async createCard(payload: CreateCreditCardRequest): Promise<CreditCard> {
+    const { data } = await api.post<ApiResponseSuccess<{ creditCard: CreditCardDTO }>>(
+      "/credit-cards",
+      payload,
+    );
+
+    return mapCreditCard(data.data.creditCard);
   },
 
   async getById(cardId: string): Promise<CreditCard> {

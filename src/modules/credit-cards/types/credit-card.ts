@@ -70,6 +70,15 @@ export interface CreditCardInvoice {
   total: number;
 }
 
+export interface CreateCreditCardRequest {
+  name: string;
+  brand: string;
+  lastFourDigits: string;
+  creditLimit: number;
+  closingDay: number;
+  dueDay: number;
+}
+
 export interface CreateCreditCardExpenseRequest {
   description: string;
   amount: number;

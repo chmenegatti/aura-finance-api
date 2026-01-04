@@ -36,7 +36,7 @@ export class CreateCreditCardExpenses1767322000002 implements MigrationInterface
       new TableForeignKey({
         columnNames: ["userId"],
         referencedColumnNames: ["id"],
-        referencedTableName: "user",
+        referencedTableName: "users",
         onDelete: "CASCADE",
       }),
     );
